@@ -4,6 +4,17 @@
 #define MAX_FILENAME 100
 #define MAX_LINE 256
 #define MAX_TASK 100
+#define TASK_ID 1000
+
+/* -------------------------------------------------------------------------- */
+/* Struct Task                                                                */
+/* -------------------------------------------------------------------------- */
+struct Task {
+	int id;
+	char description[MAX_LINE];
+	int completed;
+}; struct Task task;
+
 
 /* -------------------------------------------------------------------------- */
 /* Menu utilities                                                             */
@@ -18,8 +29,9 @@ void displayMenu(void)
 {
     clearScreen();
     printf("(w)rite a new list\n");
-    printf("(o)pen an existing list\n");
+    printf("(o)pen and append an existing list\n");
     printf("(v)iew an existing list\n");
+    printf("(q)uit\n");
 }
 
 char getChoice(void)
@@ -57,8 +69,7 @@ int countTasksInFile(const char *filename)
     }
 
     int count = 0;
-    char line[MAX_LINE];
-    while (fgets(line, sizeof(line), fptr) != NULL) {
+    while (fgets(task.description, sizeof(task.description), fptr) != NULL) {
         count++;
     }
     fclose(fptr);
@@ -98,8 +109,8 @@ int viewTasks(void)
         printf("Error opening file '%s'.\n", filename);
         return 1;
     }
-
-    printf("Number of tasks in the file: %d\n", taskCount);
+    printf("Number of tasks in the file: %d\nPress 'enter' to continue\n ", taskCount);
+    getchar();
     return 0;
 }
 
@@ -112,27 +123,26 @@ int appendTasks(void)
         return 1;
     }
 
-    int nextTaskNumber = countTasksInFile(filename) + 1;
+    task.id = countTasksInFile(filename) + TASK_ID;
     FILE *fptr = fopen(filename, "a");
     if (fptr == NULL) {
         printf("Error opening file '%s'.\n", filename);
         return 1;
     }
 
-    char task[MAX_TASK];
     printf("Enter task (press 'q' to quit)\n");
     while (1) {
-        printf("Task #%d: ", nextTaskNumber);
-        if (fgets(task, sizeof(task), stdin) == NULL) {
+        printf("Task id: %d: \t", task.id);
+        if (fgets(task.description, sizeof(task.description), stdin) == NULL) {
             break;
         }
-        if (task[0] == 'q' && task[1] == '\n') {
+        if (task.description[0] == 'q' && task.description[1] == '\n') {
             break;
         }
 
-        fprintf(fptr, "Task #%d: ", nextTaskNumber);
-        fputs(task, fptr);
-        nextTaskNumber++;
+        fprintf(fptr, "Task id: %d \t", task.id);
+        fputs(task.description, fptr);
+        task.id++;
     }
 
     fclose(fptr);
@@ -154,22 +164,21 @@ int writeTasks(void)
         return 1;
     }
 
-    char task[MAX_TASK];
-    int taskNumber = 1;
+    task.id = TASK_ID;
 
     printf("Enter task (press 'q' to quit)\n");
     while (1) {
-        printf("Task #%d: ", taskNumber);
-        if (fgets(task, sizeof(task), stdin) == NULL) {
+        printf("Task id: %d \t", task.id);
+        if (fgets(task.description, sizeof(task.description), stdin) == NULL) {
             break;
         }
-        if (task[0] == 'q' && task[1] == '\n') {
+        if (task.description[0] == 'q' && task.description[1] == '\n') {
             break;
         }
 
-        fprintf(fptr, "Task #%d: ", taskNumber);
-        fputs(task, fptr);
-        taskNumber++;
+        fprintf(fptr, "Task id: %d \t", task.id);
+        fputs(task.description, fptr);
+        task.id++;
     }
 
     fclose(fptr);
@@ -182,19 +191,25 @@ int writeTasks(void)
 
 int main(void)
 {
-    displayMenu();
-    char choice = getChoice();
-
-    while (choice == 'w') {
-        return writeTasks();
-    }
-    while (choice == 'o') {
-        return appendTasks();
-    }
-    while (choice == 'v') {
-        return viewTasks();
-    }
-
-    printf("Invalid choice.\n");
-    return 1;
+	char choice;
+	while (1) {
+		displayMenu();
+		choice = getChoice();
+		switch (choice) {
+			case 'w':
+        			writeTasks();
+				break;
+			case 'o':
+        			appendTasks();
+				break;
+			case 'v':
+    				viewTasks();
+				break;
+			case 'q':
+				return 0;
+			default:
+				printf("Invalid choice.\n");
+				break;
+		}
+	}
 }
