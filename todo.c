@@ -74,7 +74,13 @@ void promptFilename(char *filename, size_t size)
 /*
  * Loads tasks from a file into the tasks[] array.
  *
- * Returns the number of tasks loaded.
+ * File format:
+ *
+ * Task id: 1000    0    Wash car
+ * Task id: 1001    1    Change oil
+ *
+ * 0 = incomplete
+ * 1 = complete
  */
 int loadTasksFromFile(const char *filename)
 {
@@ -86,27 +92,20 @@ int loadTasksFromFile(const char *filename)
 
     taskCount = 0;
 
-    while (taskCount < MAX_TASK &&
-           fgets(tasks[taskCount].description,
-                 sizeof(tasks[taskCount].description),
-                 fptr) != NULL)
+    while (taskCount < MAX_TASK)
     {
-        /*
-         * The file is formatted as:
-         *
-         * Task id: 1000    Wash car
-         *
-         * Extract the ID and description.
-         */
         char line[MAX_LINE];
 
-        strcpy(line, tasks[taskCount].description);
+        if (fgets(line, sizeof(line), fptr) == NULL) {
+            break;
+        }
 
-        if (sscanf(line, "Task id: %d %[^\n]",
+        if (sscanf(line,
+                   "Task id: %d %d %[^\n]",
                    &tasks[taskCount].id,
-                   tasks[taskCount].description) == 2)
+                   &tasks[taskCount].completed,
+                   tasks[taskCount].description) == 3)
         {
-            tasks[taskCount].completed = 0;
             taskCount++;
         }
     }
@@ -128,9 +127,12 @@ int saveTasksToFile(const char *filename)
         return 1;
     }
 
-    for (int i = 0; i < taskCount; i++) {
-        fprintf(fptr, "Task id: %d\t%s\n",
+    for (int i = 0; i < taskCount; i++)
+    {
+        fprintf(fptr,
+                "Task id: %d\t%d\t%s\n",
                 tasks[i].id,
+                tasks[i].completed,
                 tasks[i].description);
     }
 
@@ -143,6 +145,39 @@ int saveTasksToFile(const char *filename)
 /* -------------------------------------------------------------------------- */
 /* Task operations                                                            */
 /* -------------------------------------------------------------------------- */
+
+int markComplete(void)
+{
+    char choice[10];
+
+    for (int i = 0; i < taskCount; i++)
+    {
+        printf("Mark task %d: complete? (y/n): ",
+               tasks[i].id);
+
+        if (fgets(choice, sizeof(choice), stdin) == NULL) {
+            return 1;
+        }
+
+        if (choice[0] == 'y' || choice[0] == 'Y')
+        {
+            tasks[i].completed = 1;
+        }
+
+        if (choice[0] == 'n' || choice[0] == 'N')
+        {
+            tasks[i].completed = 0;
+        }
+
+        if (choice[0] == 'q' || choice[0] == 'Q')
+        {
+            break;
+        }
+    }
+
+    return 0;
+}
+
 
 int viewTasks(void)
 {
@@ -166,19 +201,66 @@ int viewTasks(void)
 
     printf("\n--- TASK LIST ---\n\n");
 
-    for (int i = 0; i < taskCount; i++) {
-        printf("Task ID: %d\t%s\n",
+    for (int i = 0; i < taskCount; i++)
+    {
+        printf("Task ID: %d\t[%d] %s\n",
                tasks[i].id,
+               tasks[i].completed,
                tasks[i].description);
     }
 
     printf("\nNumber of tasks: %d\n", taskCount);
-    printf("Press Enter to continue...");
-    getchar();
+
+    printf("Press Enter to continue or press 'c' to mark completed tasks... ");
+
+    char choice[10];
+
+    if (fgets(choice, sizeof(choice), stdin) == NULL) {
+        return 1;
+    }
+
+    choice[strcspn(choice, "\n")] = '\0';
+
+    if (choice[0] == 'c' || choice[0] == 'C')
+    {
+        markComplete();
+
+        /*
+         * Save the updated task array back to the same file.
+         */
+        if (saveTasksToFile(filename) != 0)
+        {
+            printf("Error saving file '%s'.\n", filename);
+            printf("Press Enter to continue...");
+            getchar();
+            return 1;
+        }
+
+        /*
+         * Display the updated list.
+         */
+        printf("\n--- UPDATED TASK LIST ---\n\n");
+
+        for (int i = 0; i < taskCount; i++)
+        {
+            printf("Task ID: %d\t[%d] %s\n",
+                   tasks[i].id,
+                   tasks[i].completed,
+                   tasks[i].description);
+        }
+
+        printf("\nTasks saved.\n");
+        printf("Press Enter to return to menu...");
+        getchar();
+    }
 
     return 0;
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* Write Tasks                                                                */
+/* -------------------------------------------------------------------------- */
 
 int writeTasks(void)
 {
@@ -224,7 +306,8 @@ int writeTasks(void)
         taskCount++;
     }
 
-    if (saveTasksToFile(filename) != 0) {
+    if (saveTasksToFile(filename) != 0)
+    {
         printf("Error creating file '%s'.\n", filename);
         return 1;
     }
@@ -234,6 +317,10 @@ int writeTasks(void)
     return 0;
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* Append Tasks                                                               */
+/* -------------------------------------------------------------------------- */
 
 int appendTasks(void)
 {
@@ -251,7 +338,8 @@ int appendTasks(void)
      */
     int existingTasks = loadTasksFromFile(filename);
 
-    if (existingTasks == MAX_TASK) {
+    if (existingTasks == MAX_TASK)
+    {
         printf("Task array is already full.\n");
         return 1;
     }
@@ -284,7 +372,8 @@ int appendTasks(void)
         taskCount++;
     }
 
-    if (saveTasksToFile(filename) != 0) {
+    if (saveTasksToFile(filename) != 0)
+    {
         printf("Error saving file '%s'.\n", filename);
         return 1;
     }
