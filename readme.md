@@ -38,7 +38,7 @@ To build the cli tool, you just compile the source code, `make`
     [X] Introduce Task Struct
     [X] Store tasks in memory
     [X] Add Task Completion
-    [] Add Task Deletion
+    [X] Add Task Deletion
     [] Add Task-line Editing
     [] Improve persistence
     [] Add tests
