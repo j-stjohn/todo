@@ -189,6 +189,37 @@ int deleteTask(void)
     return 0;
 }			
 
+int editTask(void) {
+	// user picks which task id they want to edit
+	// check id_choice against task[i].id
+	// user changes task[i].description
+	
+	clearScreen();
+	/* Print Task List to show user the tasks*/
+	printf("\n--- TASK LIST ---\n\n");
+	for (int i = 0; i < taskCount; i++)
+    	{
+        	printf("Task ID: %d\t[%d] %s\n",
+               	tasks[i].id,
+               	tasks[i].completed,
+               	tasks[i].description);
+    	}
+	printf("\nNumber of tasks: %d\nWhich Task ID would you like to edit? ", taskCount);
+	int choice;
+	scanf("%d", &choice);
+	getchar();
+	printf("Enter the updated task description\nTask ID: %d\t",choice);
+	/* Loop through tasks to check tasks[i].id */
+	for (int i = 0; i < taskCount; i++) {
+		if (tasks[i].id == choice)  {
+			fgets(tasks[i].description, sizeof(tasks[i].description), stdin);
+			tasks[taskCount].description[strcspn(tasks[taskCount].description, "\n")] = '\0';
+		}
+	}
+	return 0;
+}
+
+
 
 int markComplete(void)
 {
@@ -421,7 +452,7 @@ int appendTasks(void)
     }
 
     printf("\nSaved %d total tasks.\n", taskCount);
-    printf("Would you like to delete or edit any existing tasks? (y/e)? ");
+    printf("Would you like to delete or edit any existing tasks? (n/y/e)? ");
     char choice[10];
     fgets(choice, sizeof(choice), stdin);
     choice[1] = '\0';
@@ -433,10 +464,17 @@ int appendTasks(void)
 		    return 1;
 	    }
     }
-    //if (choice[0] == 'e' || choice[0] == 'E') {
-//	    editTask();
-  //  }
-    return 0;
+    if (choice[0] == 'e' || choice[0] == 'E') {
+	    editTask();
+	    if (saveTasksToFile(filename) != 0)
+	    {
+		    printf("Error saving file '%s'.\n", filename);
+		    return 1;
+	    }
+    }
+    if (choice[0] == 'n' || choice[0] == 'N') {
+	    return 0;
+	}
 }
 	
 
