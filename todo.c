@@ -34,7 +34,7 @@ void displayMenu(void)
     clearScreen();
 
     printf("(w)rite a new list\n");
-    printf("(o)pen and append an existing list\n");
+    printf("(o)pen an existing list to modify\n");
     printf("(v)iew an existing list\n");
     printf("(q)uit\n");
 }
@@ -145,6 +145,50 @@ int saveTasksToFile(const char *filename)
 /* -------------------------------------------------------------------------- */
 /* Task operations                                                            */
 /* -------------------------------------------------------------------------- */
+
+int deleteTask(void)
+{
+    clearScreen();
+
+    int choice;
+
+    for (int i = 0; i < taskCount; i++) {
+        printf("Task ID: %d\t[%d] %s\n",
+               tasks[i].id,
+               tasks[i].completed,
+               tasks[i].description);
+    }
+
+    printf("Which Task ID to delete? ");
+    scanf("%d", &choice);
+    getchar();
+
+    for (int i = 0; i < taskCount; i++) {
+
+        if (choice == tasks[i].id) {
+
+            for (int j = i; j < taskCount - 1; j++) {
+                tasks[j] = tasks[j + 1];
+            }
+
+            taskCount--;
+
+            break;
+        }
+    }
+
+    printf("\n\n--- New Task List ---\n");
+
+    for (int i = 0; i < taskCount; i++) {
+        printf("Task ID: %d\t[%d] %s\n",
+               tasks[i].id,
+               tasks[i].completed,
+               tasks[i].description);
+    }
+	getchar();
+    return 0;
+}			
+
 
 int markComplete(void)
 {
@@ -294,9 +338,8 @@ int writeTasks(void)
         {
             break;
         }
-
-        if (tasks[taskCount].description[0] == 'q' &&
-            tasks[taskCount].description[1] == '\n')
+	tasks[taskCount].description[strcspn(tasks[taskCount].description, "\n")] = '\0';
+        if (strcmp(tasks[taskCount].description, "q") == 0)
         {
             break;
         }
@@ -360,9 +403,8 @@ int appendTasks(void)
         {
             break;
         }
-
-        if (tasks[taskCount].description[0] == 'q' &&
-            tasks[taskCount].description[1] == '\n')
+	tasks[taskCount].description[strcspn(tasks[taskCount].description, "\n")] = '\0';
+        if (strcmp(tasks[taskCount].description, "q") == 0)
         {
             break;
         }
@@ -379,10 +421,24 @@ int appendTasks(void)
     }
 
     printf("\nSaved %d total tasks.\n", taskCount);
-
+    printf("Would you like to delete or edit any existing tasks? (y/e)? ");
+    char choice[10];
+    fgets(choice, sizeof(choice), stdin);
+    choice[1] = '\0';
+    if (choice[0] == 'y' || choice[0] == 'Y') {
+	    deleteTask();
+	    if (saveTasksToFile(filename) != 0)
+	    {
+		    printf("Error saving file '%s'.\n", filename);
+		    return 1;
+	    }
+    }
+    //if (choice[0] == 'e' || choice[0] == 'E') {
+//	    editTask();
+  //  }
     return 0;
 }
-
+	
 
 /* -------------------------------------------------------------------------- */
 /* Program entry point                                                        */
