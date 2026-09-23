@@ -50,3 +50,5 @@ I added the ability to delete and edit tasks.
     (q)uit
 
     ```
+
+3. Add in custom header files to make turn todo.c into `main.c, task.c, task.h, menu.c, menu.h, file.c, file.h`
